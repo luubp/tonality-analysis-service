@@ -13,8 +13,12 @@ with open(config_path, "r") as file:
 class SentimentPrediction:
     """Class representing a sentiment prediction result."""
 
-    label: str
-    score: float
+    label_1: str
+    score_1: float
+    label_2: str
+    score_2: float
+    label_3: str
+    score_3: float
 
 
 def load_model():
@@ -26,11 +30,14 @@ def load_model():
     model_hf = pipeline(config["task"], model=config["model"], device='cpu')
 
     def model(text: str) -> SentimentPrediction:
-        pred = model_hf(text)
-        pred_best_class = pred[0]
+        pred = model_hf(text, top_k=None)
         return SentimentPrediction(
-            label=pred_best_class["label"],
-            score=pred_best_class["score"],
+            label_1=pred[0]["label"],
+            score_1=pred[0]["score"],
+            label_2=pred[1]["label"],
+            score_2=pred[1]["score"],
+            label_3=pred[2]["label"],
+            score_3=pred[2]["score"],
         )
 
     return model
