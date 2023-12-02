@@ -49,6 +49,9 @@ lr_clf.fit(train_features, train_labels)
 
 lr_clf.score(test_features, test_labels)
 
+#https://colab.research.google.com/github/jalammar/jalammar.github.io/blob/master/notebooks/bert/A_Visual_Notebook_to_Using_BERT_for_the_First_Time.ipynb
+#https://habr.com/ru/articles/704592/
+
 
 
 
