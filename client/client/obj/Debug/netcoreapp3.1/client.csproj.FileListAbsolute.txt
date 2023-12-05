@@ -24,3 +24,8 @@ C:\DPP\cs\client\client\obj\Debug\netcoreapp3.1\client.csproj.CopyComplete
 C:\DPP\cs\client\client\obj\Debug\netcoreapp3.1\client.dll
 C:\DPP\cs\client\client\obj\Debug\netcoreapp3.1\client.pdb
 C:\DPP\cs\client\client\obj\Debug\netcoreapp3.1\client.genruntimeconfig.cache
+C:\DPP\cs\client\client\bin\Debug\netcoreapp3.1\ControlzEx.dll
+C:\DPP\cs\client\client\bin\Debug\netcoreapp3.1\MahApps.Metro.dll
+C:\DPP\cs\client\client\bin\Debug\netcoreapp3.1\Microsoft.Xaml.Behaviors.dll
+C:\DPP\cs\client\client\bin\Debug\netcoreapp3.1\System.Text.Json.dll
+C:\DPP\cs\client\client\bin\Debug\netcoreapp3.1\de\MahApps.Metro.resources.dll
