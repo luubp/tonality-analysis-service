@@ -4,102 +4,146 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Newtonsoft.Json;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Text.Json;
 using Microsoft.Win32;
 using ScottPlot;
+using Newtonsoft.Json.Linq;
+using System.Drawing;
 
 namespace WpfApp1
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
+    
     public partial class MainWindow : Window
     {
+        private readonly HttpClient client = new HttpClient();
+        
         public MainWindow()
         {
             InitializeComponent();
+            double[] positions = { 3, 5, 7 };
+            double[] values = { 0.0f, 0.0f, 0.0f };
+            string[] labels = { pozitive.Content.ToString(), neutral.Content.ToString(), negative.Content.ToString() };
+            Chart.Plot.AddBar(values, positions, color: Color.Cyan);
+            Chart.Plot.XTicks(positions, labels);
+            Chart.Plot.SetAxisLimits(yMax: 1, yMin: 0);
+            Chart.Refresh();
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            string JSONData = JsonConvert.SerializeObject(textBox1.Text);
+            var url = "http://localhost:80/predict";
+            var data = textBox1.Text;  // данные для отправки
+            
 
-            /*WebRequest request = WebRequest.Create("адрес сервера");
-
-            string text = JSONData;
-
-            byte[] byteMsg = Encoding.UTF8.GetBytes(text);
-
-            request.ContentType = "application/x-www-urlencoded";
-
-            request.ContentLength = byteMsg.Length;
-
-            using (Stream stream = request.GetRequestStream())
+            try
             {
-                stream.Write(byteMsg, 0, byteMsg.Length);
+                download.Visibility = Visibility.Visible;
+                // Запуск асинхронного метода для выполнения запроса
+                string jsonResponse = await SendGetRequestAsync($"{url}?text={Uri.EscapeDataString(data)}");
+
+                // Обработка jsonResponse (десериализация JSON)
+                JObject jsonObject = JObject.Parse(jsonResponse);
+
+
+                if ((string)jsonObject["label_1"] == "positive" && (string)jsonObject["label_2"] == "neutral" && (string)jsonObject["label_3"] == "negative")
+                    DrawDiagram((double)jsonObject["score_1"], (double)jsonObject["score_2"], (double)jsonObject["score_3"]);
+                else if ((string)jsonObject["label_1"] == "positive" && (string)jsonObject["label_3"] == "neutral" && (string)jsonObject["label_2"] == "negative")
+                    DrawDiagram((double)jsonObject["score_1"], (double)jsonObject["score_3"], (double)jsonObject["score_2"]);
+                else if ((string)jsonObject["label_2"] == "positive" && (string)jsonObject["label_3"] == "neutral" && (string)jsonObject["label_1"] == "negative")
+                    DrawDiagram((double)jsonObject["score_2"], (double)jsonObject["score_3"], (double)jsonObject["score_1"]);
+                else if ((string)jsonObject["label_2"] == "positive" && (string)jsonObject["label_1"] == "neutral" && (string)jsonObject["label_3"] == "negative")
+                    DrawDiagram((double)jsonObject["score_2"], (double)jsonObject["score_1"], (double)jsonObject["score_3"]);
+                else if ((string)jsonObject["label_3"] == "positive" && (string)jsonObject["label_1"] == "neutral" && (string)jsonObject["label_2"] == "negative")
+                    DrawDiagram((double)jsonObject["score_3"], (double)jsonObject["score_1"], (double)jsonObject["score_2"]);
+                else
+                    DrawDiagram((double)jsonObject["score_3"], (double)jsonObject["score_2"], (double)jsonObject["score_1"]);
+
+            }
+            catch (Exception ex)
+            {
+                // Обработка исключений при выполнении запроса
+                MessageBox.Show($"Ошибка при выполнении запроса: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                download.Visibility = Visibility.Hidden;
             }
 
-            WebResponse response = request.GetResponse();
-
-            string answer = null;
-
-            using (Stream s = response.GetResponseStream())
+            
+            finally
             {
-                using (StreamReader sR = new StreamReader(s))
-                {
-                    answer = sR.ReadToEnd();
-                }
+                download.Visibility = Visibility.Hidden;
             }
 
-            response.Close();*/
-
-
-
-            double score1 = 0.9, score2 = 0.08, score3 = 0.02;
-            DrawDiagram(score1, score2, score3);
+            
         }
+
+        private async Task<string> SendGetRequestAsync(string url)
+        {
+            try
+            {
+
+                // Отправить GET-запрос асинхронно
+                HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+
+                // Проверить успешность ответа
+                response.EnsureSuccessStatusCode();
+
+                // Чтение ответа в виде строки
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+
+                return responseContent;
+            }
+            catch (Exception ex)
+            {
+                // Обработка исключений при выполнении запроса
+                MessageBox.Show($"Ошибка при выполнении запроса: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                download.Visibility = Visibility.Hidden;
+                return null;
+            }
+        }
+
 
         private void DrawDiagram(double score1, double score2, double score3)
         {
+            Chart.Plot.Clear();
             double[] values = { score1, score2, score3 };
             double[] positions = { 3, 5, 7 };
             string[] labels = { pozitive.Content.ToString(), neutral.Content.ToString(), negative.Content.ToString() };
             Chart.Plot.AddBar(values, positions);
             Chart.Plot.XTicks(positions, labels);
-            Chart.Plot.SetAxisLimits(yMin: 0);
+            Chart.Plot.SetAxisLimits(yMax: 1, yMin: 0);
 
             Chart.Refresh();
+            download.Visibility = Visibility.Hidden;
         }
 
         private void OpenFile_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog dialog = new OpenFileDialog();
-            dialog.FileName = "Test";
             dialog.DefaultExt = ".txt";
             dialog.Filter = "Text documents (.txt)|*.txt";
             if (dialog.ShowDialog() == true)
             {
                 textBox1.Text = File.ReadAllText(dialog.FileName);
             }
+            labelFileName.Content = dialog.FileName;
+            labelFileName.Visibility = Visibility.Visible;
         }
 
         private void SaveFile_Click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog s = new SaveFileDialog();
-            s.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+            s.Filter = "png files (*.png)|*.png|All files (*.*)|*.*";
+
             if (s.ShowDialog() == true)
             {
-                File.WriteAllText(s.FileName, textBox1.Text);
+                Chart.Plot.SaveFig(s.FileName);
             }
         }
 
@@ -108,4 +152,7 @@ namespace WpfApp1
             MessageBox.Show(String.Format("Приложение позволяет узнать тональность текста (эмоциональную окраску)"));
         }
     }
+
+    
+
 }
